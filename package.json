@@ -1,0 +1,15 @@
+{
+  "name": "bri-unit-performance",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.15.7",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  }
+}
