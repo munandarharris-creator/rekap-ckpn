@@ -608,28 +608,18 @@
               
               <div>
                 <label class="block text-xs font-bold text-slate-500 mb-1">Kolek Terbaru</label>
-                <select id="nom-kolek-filter" multiple onchange="renderNominatifTable()" class="w-full h-28 px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-bri-tosca bg-white text-slate-700">
-                  <option value="LANCAR">Lancar</option>
-                  <option value="SML1">SML1</option>
-                  <option value="SML2">SML2</option>
-                  <option value="SML3">SML3</option>
-                  <option value="KURANG LANCAR">Kurang Lancar</option>
-                  <option value="DIRAGUKAN">Diragukan</option>
-                  <option value="MACET">Macet</option>
-                </select>
+                <div class="relative">
+                  <button type="button" onclick="toggleKolekDropdown('terbaru')" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-bri-tosca bg-white flex justify-between items-center text-slate-700"><span id="nom-kolek-label">Semua Kolek Terbaru</span><svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 9-7 7-7-7"></path></svg></button>
+                  <div id="nom-kolek-checkbox-container" class="absolute left-0 right-0 z-50 bg-white border border-slate-200 rounded-xl mt-1 max-h-48 overflow-y-auto p-3 shadow-xl hidden"></div>
+                </div>
               </div>
 
               <div>
                 <label class="block text-xs font-bold text-slate-500 mb-1">Kolek Bulan Lalu</label>
-                <select id="nom-last-kolek-filter" multiple onchange="renderNominatifTable()" class="w-full h-28 px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-bri-tosca bg-white text-slate-700">
-                  <option value="LANCAR">Lancar</option>
-                  <option value="SML1">SML1</option>
-                  <option value="SML2">SML2</option>
-                  <option value="SML3">SML3</option>
-                  <option value="KURANG LANCAR">Kurang Lancar</option>
-                  <option value="DIRAGUKAN">Diragukan</option>
-                  <option value="MACET">Macet</option>
-                </select>
+                <div class="relative">
+                  <button type="button" onclick="toggleKolekDropdown('bulanLalu')" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-bri-tosca bg-white flex justify-between items-center text-slate-700"><span id="nom-last-kolek-label">Semua Kolek Bulan Lalu</span><svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 9-7 7-7-7"></path></svg></button>
+                  <div id="nom-last-kolek-checkbox-container" class="absolute left-0 right-0 z-50 bg-white border border-slate-200 rounded-xl mt-1 max-h-48 overflow-y-auto p-3 shadow-xl hidden"></div>
+                </div>
               </div>
               
               <div>
@@ -1102,6 +1092,8 @@
       currentUser: null, 
       captchaAnswer: 0,
       selectedPmtDates: [], 
+      selectedKolekTerbaru: [],
+      selectedKolekBulanLalu: [],
       selectedCategory: 'NON_PUMK',
       nominatifSortField: 'no_rekening',
       nominatifSortAsc: true,
@@ -1198,6 +1190,7 @@
       }
 
       state.sidebarOpen = true; 
+      populateKolekChecklists();
       initDatabase();
       switchTab('main-menu');
 
@@ -1207,6 +1200,11 @@
         if (dropdown && btn && !btn.contains(event.target) && !dropdown.contains(event.target)) {
           dropdown.classList.add('hidden');
         }
+        ['terbaru', 'bulanLalu'].forEach(type => {
+          const container = document.getElementById(type === 'terbaru' ? 'nom-kolek-checkbox-container' : 'nom-last-kolek-checkbox-container');
+          const button = document.getElementById(type === 'terbaru' ? 'nom-kolek-label' : 'nom-last-kolek-label')?.parentElement;
+          if (container && button && !button.contains(event.target) && !container.contains(event.target)) container.classList.add('hidden');
+        });
       });
     };
 
@@ -1789,10 +1787,39 @@
       renderDashboard(); 
     }
 
+    const KOLEK_FILTER_OPTIONS = ['LANCAR', 'SML1', 'SML2', 'SML3', 'KURANG LANCAR', 'DIRAGUKAN', 'MACET'];
+
     function getMultiSelectValues(id) {
-      const select = document.getElementById(id);
-      if (!select) return [];
-      return Array.from(select.selectedOptions).map(option => option.value.toUpperCase().trim()).filter(value => value !== 'ALL');
+      return id === 'nom-kolek-filter' ? state.selectedKolekTerbaru : state.selectedKolekBulanLalu;
+    }
+
+    function toggleKolekDropdown(type) {
+      const id = type === 'terbaru' ? 'nom-kolek-checkbox-container' : 'nom-last-kolek-checkbox-container';
+      document.getElementById(id)?.classList.toggle('hidden');
+    }
+
+    function populateKolekChecklists() {
+      [['terbaru', 'selectedKolekTerbaru', 'nom-kolek-checkbox-container', 'nom-kolek-label', 'Semua Kolek Terbaru'], ['bulanLalu', 'selectedKolekBulanLalu', 'nom-last-kolek-checkbox-container', 'nom-last-kolek-label', 'Semua Kolek Bulan Lalu']].forEach(([type, stateKey, containerId, labelId, defaultLabel]) => {
+        const container = document.getElementById(containerId);
+        const label = document.getElementById(labelId);
+        if (!container || !label) return;
+        const selected = state[stateKey] || [];
+        label.textContent = selected.length ? `${selected.length} kolek dipilih` : defaultLabel;
+        container.innerHTML = `<label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded text-xs font-semibold text-slate-700"><input type="checkbox" ${selected.length === 0 ? 'checked' : ''} onchange="toggleAllKolek('${type}', this.checked)" class="rounded text-bri-tosca">Semua Kolek</label><div class="h-px bg-slate-100 my-1"></div>` + KOLEK_FILTER_OPTIONS.map(value => `<label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded text-xs text-slate-600"><input type="checkbox" value="${value}" ${selected.includes(value) ? 'checked' : ''} onchange="toggleKolekSelection('${type}', '${value}', this.checked)" class="rounded text-bri-tosca">${value}</label>`).join('');
+      });
+    }
+
+    function toggleAllKolek(type, checked) {
+      state[type === 'terbaru' ? 'selectedKolekTerbaru' : 'selectedKolekBulanLalu'] = [];
+      populateKolekChecklists();
+      renderNominatifTable();
+    }
+
+    function toggleKolekSelection(type, value, checked) {
+      const key = type === 'terbaru' ? 'selectedKolekTerbaru' : 'selectedKolekBulanLalu';
+      state[key] = checked ? [...new Set([...state[key], value])] : state[key].filter(item => item !== value);
+      populateKolekChecklists();
+      renderNominatifTable();
     }
 
     function setNominatifSort(field) {
@@ -2661,7 +2688,8 @@
         const items = Array.from(recap.values()).sort((a, b) => String(a.mantri).localeCompare(String(b.mantri), 'id') || String(a.category).localeCompare(String(b.category), 'id'));
         items.forEach(item => {
           const row = document.createElement('tr');
-          row.innerHTML = `<td class="p-3 font-medium">${item.mantri}</td><td class="p-3">${item.category}</td><td class="p-3 text-right">${formatRupiah(item.outstanding)}</td><td class="p-3 text-right">${formatRupiah(item.ckpn)}</td>`;
+          const recapCategoryClass = item.category === 'DOWNGRADE' ? 'bg-rose-50 text-rose-700 border-rose-200' : item.category === 'UPGRADE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200';
+          row.innerHTML = `<td class="p-3 font-medium">${item.mantri}</td><td class="p-3"><span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border ${recapCategoryClass}">${item.category}</span></td><td class="p-3 text-right">${formatRupiah(item.outstanding)}</td><td class="p-3 text-right">${formatRupiah(item.ckpn)}</td>`;
           summaryBody.appendChild(row);
         });
         const grandOs = items.reduce((sum, item) => sum + item.outstanding, 0);
@@ -3419,8 +3447,8 @@
     function printNominatif() {
       const search = document.getElementById('nom-search').value.toLowerCase().trim();
       const mantriFilter = document.getElementById('nom-mantri-filter').value;
-      const kolekFilter = document.getElementById('nom-kolek-filter').value.toUpperCase().trim();
-      const lastKolekFilter = document.getElementById('nom-last-kolek-filter').value.toUpperCase().trim();
+      const kolekFilter = getMultiSelectValues('nom-kolek-filter');
+      const lastKolekFilter = getMultiSelectValues('nom-last-kolek-filter');
       const restrukFilter = document.getElementById('nom-restruk-filter').value;
 
       let filteredRaw = getFilteredDataset(state.dataTerbaru);
@@ -3432,16 +3460,16 @@
         const matchesPageMantri = mantriFilter === 'all' || n.mantri === mantriFilter;
 
         let matchesKolek = true;
-        if (kolekFilter !== 'ALL') {
+        if (kolekFilter.length > 0) {
           const solvedKolek = resolveKolekStatusWithSML(n, resolveKolekStatus(n)).toUpperCase().trim();
-          matchesKolek = (solvedKolek === kolekFilter);
+          matchesKolek = kolekFilter.includes(solvedKolek);
         }
 
         let matchesLastKolek = true;
-        if (lastKolekFilter !== 'ALL') {
+        if (lastKolekFilter.length > 0) {
           const matchedLastMonth = state.dataAkhirBulan.find(m => m.no_rekening === n.no_rekening);
           const solvedLastKolek = matchedLastMonth ? resolveKolekStatusWithSML(matchedLastMonth, resolveKolekStatus(matchedLastMonth)).toUpperCase().trim() : "-";
-          matchesLastKolek = (solvedLastKolek === lastKolekFilter);
+          matchesLastKolek = lastKolekFilter.includes(solvedLastKolek);
         }
 
         let matchesRestruk = true;
